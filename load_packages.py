@@ -1,9 +1,11 @@
+## NEED TO INSTALL THE FOLLOWING PACKAGES IF NOT ALREADY INSTALLED
+# lifelines
+# gspread
+# google-cloud-bigquery
 # Loading necessary packages
-# NEED TO FIX UPLOAD ERRORs
-p3 -m pip install lifelines
-p3 -m pip install  gspread
 
-!pip install gspread from dateutil.relativedelta import relativedelta
+# NEED TO FIX UPLOAD ERRORs
+from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta, date
 import pandas as pd
 from google.cloud import bigquery
@@ -16,4 +18,4 @@ from google.colab import auth
 
 # Authenticate to access Google Cloud services
 auth.authenticate_user()
-client = bigquery.Client(project='indy-eng')
+client = bigquery.Client(project="indy-eng")
