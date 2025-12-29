@@ -1,6 +1,7 @@
 # Loading necessary packages
-!pip install lifelines
-!pip install gspread
+# NEED TO FIX UPLOAD ERRORs
+p3 -m pip install lifelines
+p3 -m pip install  gspread
 
 !pip install gspread from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta, date
