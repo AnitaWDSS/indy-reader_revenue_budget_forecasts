@@ -12,7 +12,7 @@ Original file is located at
 !pip install lifelines
 !pip install gspread
 
-!pip install gspreadfrom dateutil.relativedelta import relativedelta
+from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta, date
 import pandas as pd
 from google.cloud import bigquery
@@ -26,7 +26,6 @@ from google.colab import auth
 auth.authenticate_user()
 
 client = bigquery.Client(project='indy-eng')
-
 # This map is needed to translate trial_duration into trial_duration in months
 cadence_map = {
     "day": 1,
@@ -41,8 +40,6 @@ cadence_map = {
     "No trial": 0
 }
 
-subs_details_rundate = "2025-10-17"
-
 """# Retention Curves
 
 ## Creating Retention Curves
@@ -56,6 +53,8 @@ splits = [
 ]
 
 splits_str = ", ".join(splits)
+
+subs_details_rundate = "2025-10-17"
 
 query = f"""
 

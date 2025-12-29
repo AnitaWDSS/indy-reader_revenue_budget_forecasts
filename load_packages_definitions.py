@@ -19,3 +19,5 @@ from google.colab import auth
 # Authenticate to access Google Cloud services
 auth.authenticate_user()
 client = bigquery.Client(project="indy-eng")
+
+subs_details_rundate = "2025-10-17"
