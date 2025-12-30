@@ -1,3 +1,11 @@
+"""
+Subscriptions Data
+--------------------------------
+Parameters:
+- splits: Dimensions used to create categorisation of our new retention curves
+- subs_details_rundate: The run date of the subscription details snapshot to be used
+"""
+
 # Need to install google-cloud-bigquery, db-dtypes if not already installed
 from google.cloud import bigquery
 
