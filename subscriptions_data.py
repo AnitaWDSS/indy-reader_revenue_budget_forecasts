@@ -1,7 +1,6 @@
 # Need to install google-cloud-bigquery, db-dtypes if not already installed
 from google.cloud import bigquery
 
-
 # Run the following in terminal to authenticate account: gcloud auth application-default login
 
 client = bigquery.Client(project="indy-eng")
@@ -65,4 +64,3 @@ WHERE
 query_job = client.query(query)
 retention_curves_df = query_job.to_dataframe()
 retention_curves_df["trial_duration_months"].fillna(0, inplace=True)
-
