@@ -10,11 +10,12 @@ import pandas as pd
 import numpy as np
 from src.models.retention_curves import apply_km
 from src.project_data.subscriptions_data import retention_curves_df, splits
-from src.project_data.user_base_data import cohort_df
+from src.project_data.user_base_data import cohort_df, base_splits
 from datetime import date
 from src.models.new_cohorts_generator import generate_new_cohorts
 from src.project_data.acquisition_data import combined
 from src.models.fill_in_acq_terms import extend_aquisition_data
+from src.models.apply_retention_curves import recursive_forecast
 
 # Produce Kaplan-Meier retention curves
 retention_curves = retention_curves_df.groupby(splits, group_keys=False).apply(apply_km)
@@ -171,3 +172,80 @@ extended_aquisition_data_extended["term_price_value"] = (
 )
 
 extended_aquisition_data_extended.groupby("signup_cohort")["active_users"].sum()
+
+"""# Merging User Base & Aquisition"""
+
+for col in ["active_users", "total_cohort_users"]:
+    cohort_df[col] = pd.to_numeric(cohort_df[col], errors="coerce").astype("Int64")
+    extended_aquisition_data_extended[col] = (
+        pd.to_numeric(extended_aquisition_data_extended[col], errors="coerce")
+        .round()
+        .astype("Int64")
+    )
+
+for col in ["calendar_month", "signup_cohort"]:
+    cohort_df[col] = pd.to_datetime(cohort_df[col], errors="coerce").dt.date
+    extended_aquisition_data_extended[col] = pd.to_datetime(
+        extended_aquisition_data_extended[col], errors="coerce"
+    ).dt.date
+
+# This map is needed to translate trial_duration into trial_duration in months
+cadence_map = {
+    "day": 1,
+    "Staging test": 0,
+    "week": 1,
+    "2 week": 1,
+    "month": 1,
+    "quarter": 3,
+    "6 month": 6,
+    "year": 12,
+    "3 year": 36,
+    "No trial": 0,
+}
+
+extended_aquisition_data_extended["trial_duration_months"] = (
+    extended_aquisition_data_extended["trial_duration"].map(cadence_map)
+)
+
+base_acq_df = pd.concat(
+    [cohort_df, extended_aquisition_data_extended], ignore_index=True
+)
+
+base_acq_df = base_acq_df.drop("level_8", axis="columns")
+
+currency_code_map = {"UK": "GBP", "EUR": "EUR", "US": "USD"}
+
+base_acq_df["payment_currency"] = base_acq_df["region"].map(currency_code_map)
+
+"""# Applying Retention Curves"""
+
+base_acq_retcurves_df = base_acq_df.merge(
+    retention_curves, how="left", on=splits + ["month_index"]
+)
+
+base_acq_retcurves_df.piecewise_retention_rate = (
+    base_acq_retcurves_df.piecewise_retention_rate.fillna(1)
+)
+
+base_acq_retcurves_df = base_acq_retcurves_df.sort_values(base_splits + ["month_index"])
+
+base_acq_retcurves_df["previous_active_users"] = base_acq_retcurves_df.groupby(
+    base_splits, dropna=False
+)["active_users"].shift(1)
+
+
+base_acq_retcurves_forecast_df = base_acq_retcurves_df.groupby(
+    base_splits, group_keys=False, dropna=False
+).apply(recursive_forecast)
+
+base_acq_retcurves_forecast_df["is_trialist"] = np.where(
+    (
+        (base_acq_retcurves_forecast_df["trial_duration_months"] == 0)
+        | (
+            base_acq_retcurves_forecast_df["trial_duration_months"]
+            <= (base_acq_retcurves_forecast_df["month_index"])
+        )
+    ),
+    False,
+    True,
+)
