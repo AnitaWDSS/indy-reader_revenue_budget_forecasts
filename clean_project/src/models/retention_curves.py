@@ -1,6 +1,12 @@
 """
 Retention Curve Fitting and Extension Module
 --------------------------------------
+This module provides functions to fit Kaplan–Meier survival curves
+to subscription data and extend these curves for forecasting purposes.
+It includes a naïve forecasting method that assumes future retention rates
+remain constant at the last observed value.
+Future Improvements:
+- Integrate more sophisticated forecasting methods.
 
 """
 
@@ -11,8 +17,6 @@ from lifelines import KaplanMeierFitter
 from src.project_data.subscriptions_data import splits
 
 
-## ANA COMMENT: Is this used anywhere else? If not, we can remove it.
-# Fitting the retention curves, to be cleaned w/ Alex's version of the split
 def naive_forecast(survival_df, months_to_extend, plot=False):
     """
     Extends a survival dataframe using a naïve forecast where future retention rates
@@ -154,20 +158,3 @@ def apply_km(group: pd.DataFrame) -> pd.DataFrame:
         extended_survival_df[split] = group.iloc[0][split]
 
     return extended_survival_df
-
-
-# retention_curves = retention_curves_df.groupby(splits, group_keys=False).apply(apply_km)
-
-# checking_map = {
-#     "package_type": "DIGITAL Subscriber",
-#     "trial_duration_months": 6,
-#     "term_cadence": "year",
-# }
-# retention_curves[
-#     (retention_curves["package_type"] == checking_map["package_type"])
-#     & (
-#         retention_curves["trial_duration_months"]
-#         == checking_map["trial_duration_months"]
-#     )
-#     & (retention_curves["term_cadence"] == checking_map["term_cadence"])
-# ]
