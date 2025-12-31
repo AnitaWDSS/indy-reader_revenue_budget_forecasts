@@ -16,6 +16,8 @@ from src.models.new_cohorts_generator import generate_new_cohorts
 from src.project_data.acquisition_data import combined
 from src.models.fill_in_acq_terms import extend_aquisition_data
 from src.models.apply_retention_curves import recursive_forecast
+from src.models.x_month_average import last_x_average
+from src.project_data.offer_data import offers_df
 
 # Produce Kaplan-Meier retention curves
 retention_curves = retention_curves_df.groupby(splits, group_keys=False).apply(apply_km)
@@ -249,3 +251,17 @@ base_acq_retcurves_forecast_df["is_trialist"] = np.where(
     False,
     True,
 )
+
+offer_splits = [
+    "region",
+    "term_cadence",
+    "package_type",
+    "customer_type",
+    "monthly_amount_paid",
+]
+
+offers_forecast_df = offers_df.groupby(offer_splits, group_keys=True).apply(
+    last_x_average, include_groups=False
+)
+
+offers_forecast_df.groupby("transaction_month")["number_of_offers"].sum()
