@@ -18,6 +18,10 @@ from src.models.fill_in_acq_terms import extend_aquisition_data
 from src.models.apply_retention_curves import recursive_forecast
 from src.models.x_month_average import last_x_average
 from src.project_data.offer_data import offers_df
+from src.models.offers_user_base import calculate_user_base
+from src.project_data.currency_conv_data import currency_conversion_extended_df
+from src.project_data.refunds_data import refunds_df
+from src.models.refund_forecast import generate_refund_forecast
 
 # Produce Kaplan-Meier retention curves
 retention_curves = retention_curves_df.groupby(splits, group_keys=False).apply(apply_km)
@@ -265,3 +269,182 @@ offers_forecast_df = offers_df.groupby(offer_splits, group_keys=True).apply(
 )
 
 offers_forecast_df.groupby("transaction_month")["number_of_offers"].sum()
+
+"""## Ammortising Offers"""
+
+offers_forecast_df = offers_forecast_df.reset_index()
+offers_forecast_df.term_cadence.unique()
+
+# Note: Offers can only be yearly so I'm removing any payments that do not have that cadence
+
+offers_forecast_df = offers_forecast_df[offers_forecast_df["term_cadence"] == "year"]
+
+offers_forecast_df.head(1)
+
+offers_forecast_df["relevant_cadence_months"] = 12
+
+# Ensure transactions are only amortised throughout the subscription cadence if they're payments - refunds do not get amortised
+offers_forecast_df["amortised_summed_local_price"] = (
+    offers_forecast_df["monthly_amount_paid"]
+    / offers_forecast_df["relevant_cadence_months"]
+)
+
+
+offers_forecast_df["transaction_month"] = pd.to_datetime(
+    offers_forecast_df["transaction_month"]
+)
+
+grouping_columns = [
+    "term_cadence",
+    "region",
+    "package_type",
+    "customer_type",
+    "monthly_amount_paid",
+    "relevant_cadence_months",
+]
+
+amortised_offers_df = (
+    offers_forecast_df.groupby(grouping_columns, group_keys=False)
+    .apply(calculate_user_base)
+    .reset_index(drop=True)
+)
+
+amortised_offers_df["amortised_revenue"] = (
+    amortised_offers_df["user_base"]
+    * amortised_offers_df["amortised_summed_local_price"]
+)
+
+"""##Converting Offers Currencies"""
+
+currency_code_map = {"UK": "GBP", "EUR": "EUR", "US": "USD"}
+amortised_offers_df["Currency_Code"] = amortised_offers_df["region"].map(
+    currency_code_map
+)
+
+# Convert 'transaction_month' and 'Date' columns to datetime objects before merging
+amortised_offers_df["transaction_month"] = pd.to_datetime(
+    amortised_offers_df["transaction_month"]
+)
+currency_conversion_extended_df["Date"] = pd.to_datetime(
+    currency_conversion_extended_df["Date"]
+)
+
+
+GBP_amortised_offers_df = amortised_offers_df.merge(
+    currency_conversion_extended_df,
+    how="left",
+    left_on=["transaction_month", "Currency_Code"],
+    right_on=["Date", "Currency_Code"],
+).drop(columns=["Date", "Currency_Code"])
+GBP_amortised_offers_df["GBP_amortised_revenue"] = (
+    GBP_amortised_offers_df["amortised_revenue"]
+    * GBP_amortised_offers_df["GBP_Conversion"]
+)
+
+GBP_amortised_offers_df.head(1)
+
+"""## Final Dataset"""
+
+GBP_amortised_offers_df["transaction_month"] = pd.to_datetime(
+    GBP_amortised_offers_df["transaction_month"]
+)
+GBP_amortised_offers_df = GBP_amortised_offers_df[
+    GBP_amortised_offers_df.transaction_month.dt.date >= date(2025, 1, 1)
+]
+
+"""
+Refunds
+--------------------------------
+
+"""
+
+forecasted_refunds = generate_refund_forecast(refunds_df)
+
+forecasted_refunds["yearmonth"] = forecasted_refunds["yearmonth"].astype(str) + "-01"
+forecasted_refunds["yearmonth"] = pd.to_datetime(
+    forecasted_refunds["yearmonth"]
+).dt.date
+
+forecasted_refunds_full = pd.concat([refunds_df, forecasted_refunds], ignore_index=True)
+
+forecasted_refunds_full.head(1)
+
+"""## Converting Refunds Currencies"""
+
+forecasted_refunds_full.head(1)
+
+forecasted_refunds_full["Currency_Code"] = forecasted_refunds_full["region"].map(
+    currency_code_map
+)
+
+# Convert 'transaction_month' and 'Date' columns to datetime objects before merging
+forecasted_refunds_full["yearmonth"] = pd.to_datetime(
+    forecasted_refunds_full["yearmonth"]
+)
+currency_conversion_extended_df["Date"] = pd.to_datetime(
+    currency_conversion_extended_df["Date"]
+)
+
+
+GBP_forecasted_refunds_full = forecasted_refunds_full.merge(
+    currency_conversion_extended_df,
+    how="left",
+    left_on=["yearmonth", "Currency_Code"],
+    right_on=["Date", "Currency_Code"],
+).drop(columns=["Date", "Currency_Code"])
+GBP_forecasted_refunds_full["GBP_amortised_revenue"] = (
+    GBP_forecasted_refunds_full["refund_amount"]
+    * GBP_forecasted_refunds_full["GBP_Conversion"]
+)
+"""# Revenue
+
+## Cohorts Merge
+"""
+
+currency_conversion_extended_df["Date"] = pd.to_datetime(
+    currency_conversion_extended_df["Date"]
+).dt.date
+base_acq_retcurves_forecast_df["calendar_month"] = pd.to_datetime(
+    base_acq_retcurves_forecast_df["calendar_month"]
+).dt.date
+
+cohort_joined_converted_df = base_acq_retcurves_forecast_df.merge(
+    currency_conversion_extended_df,
+    how="left",
+    left_on=["calendar_month", "payment_currency"],
+    right_on=["Date", "Currency_Code"],
+).drop(columns=["Date", "Currency_Code"])
+cohort_joined_converted_df["GBP_Conversion"] = cohort_joined_converted_df[
+    "GBP_Conversion"
+].fillna(1)
+
+"""## Revenue Calculation"""
+
+cohort_joined_converted_df["paying_amount"] = np.where(
+    cohort_joined_converted_df["is_trialist"],
+    cohort_joined_converted_df["trial_price_value"],
+    cohort_joined_converted_df["term_price_value"],
+)
+
+cohort_joined_converted_df["term_cadence_months"] = cohort_joined_converted_df[
+    "term_cadence"
+].map(cadence_map)
+
+cohort_joined_converted_df["current_tenure_cadence"] = np.where(
+    cohort_joined_converted_df["is_trialist"],
+    cohort_joined_converted_df["trial_duration_months"],
+    cohort_joined_converted_df["term_cadence_months"],
+)
+
+cohort_joined_converted_df["amortised_paying_amount"] = cohort_joined_converted_df[
+    "paying_amount"
+].astype(float) / cohort_joined_converted_df["current_tenure_cadence"].astype(float)
+cohort_joined_converted_df["predicted_amortised_revenue"] = (
+    cohort_joined_converted_df["amortised_paying_amount"]
+    * cohort_joined_converted_df["predicted_active_users"]
+)
+
+cohort_joined_converted_df["converted_predicted_amortised_revenue"] = (
+    cohort_joined_converted_df["predicted_amortised_revenue"]
+    * cohort_joined_converted_df["GBP_Conversion"]
+)

@@ -1,3 +1,12 @@
+"""
+# Gsheet Upload Script
+--------------------------------
+Uploads forecast data to Google Sheets for visualization and reporting.
+
+NEEDS:
+Ammend this to work for VSCode!
+"""
+
 from datetime import date
 from main import GBP_amortised_offers_df, cohort_joined_converted_df
 import numpy as np

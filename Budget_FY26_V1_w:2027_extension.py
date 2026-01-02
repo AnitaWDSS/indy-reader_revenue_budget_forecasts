@@ -1389,8 +1389,6 @@ cohort_joined_converted_df[mask_2027][["converted_predicted_amortised_revenue", 
 
 """# KPIs"""
 
-
-
 """# Ghsheet Upload"""
 
 from google.auth import default
