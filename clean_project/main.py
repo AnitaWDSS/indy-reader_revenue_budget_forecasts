@@ -448,3 +448,151 @@ cohort_joined_converted_df["converted_predicted_amortised_revenue"] = (
     cohort_joined_converted_df["predicted_amortised_revenue"]
     * cohort_joined_converted_df["GBP_Conversion"]
 )
+
+final_revenue_df = cohort_joined_converted_df
+
+final_cohort_splits = [
+    "region",
+    "package_type",
+    "term_cadence_months",
+    "term_price_value",
+    "trial_duration_months",
+    "trial_price_value",
+    "calendar_month",
+]
+"""
+# Additional KPIs
+________________________________
+This includes: 
+1. Acquisition numbers
+2. Churn numbers
+3. Trialist Conversion
+4. Churn rate
+"""
+
+# Creating final_df to hold only necessary KPIs
+dimensions = [
+    "package_type",
+    "trial_duration_months",
+    # 'term_cadence',
+    "trial_price_value",
+    # 'trial_price',
+    # 'term_price',
+    "term_price_value",
+    "payment_currency",
+    "region",
+    "signup_cohort",
+    # 'trial_duration',
+    "calendar_month",
+    "month_index",
+    "total_cohort_users",
+    "retention_curve_rate",
+    "piecewise_retention_rate",
+    "is_trialist",
+    "GBP_Conversion",
+    "paying_amount",
+    "term_cadence_months",
+    "current_tenure_cadence",
+    "amortised_paying_amount",
+]
+
+metrics = [
+    "active_users",
+    "previous_active_users",
+    "predicted_active_users",
+    "predicted_amortised_revenue",
+    "converted_predicted_amortised_revenue",
+]
+
+final_df = (
+    cohort_joined_converted_df.groupby(dimensions, dropna=False)[metrics]
+    .sum()
+    .reset_index()
+)
+
+kpi_dimensions = [
+    "package_type",
+    "trial_duration_months",
+    # 'term_cadence',
+    "trial_price_value",
+    # 'trial_price',
+    # 'term_price',
+    "term_price_value",
+    "payment_currency",
+    "region",
+    "signup_cohort",
+    # 'trial_duration',
+    # 'calendar_month',
+    # 'month_index',
+    # 'total_cohort_users',
+    # 'retention_curve_rate',
+    # 'piecewise_retention_rate',
+    # 'is_trialist',
+    # 'GBP_Conversion',
+    # 'paying_amount',
+    "term_cadence_months",
+    # 'current_tenure_cadence',
+    # 'amortised_paying_amount',
+]
+
+final_cohort_splits = [
+    "region",
+    "package_type",
+    "term_cadence_months",
+    "term_price_value",
+    "trial_duration_months",
+    "trial_price_value",
+    "calendar_month",
+]
+
+### Acquisition Numbers
+final_df["acquisition"] = 0
+
+final_df.loc[
+    (final_df["month_index"] == 0)
+    & (final_df["calendar_month"] >= date(2025, 10, 1))
+    & (final_df["predicted_active_users"] > 0),
+    "acquisition",
+] = final_df["predicted_active_users"]
+
+### Churn Numbers
+
+final_df["previous_predicted_active_users"] = (
+    final_df.groupby(kpi_dimensions, dropna=False)["predicted_active_users"]
+    .shift(1)
+    .fillna(0)
+)
+final_df["churn"] = (
+    final_df["previous_predicted_active_users"] - final_df["predicted_active_users"]
+)
+
+final_df.loc[final_df["month_index"] == 0, "churn"] = (
+    0  # Set churn to 0 for month_index = 0 (since there is no previous month)
+)
+
+final_df["churn_is_trialist"] = np.where(
+    (
+        (final_df["trial_duration_months"] == 0)
+        | (final_df["trial_duration_months"] < (final_df["month_index"]))
+    ),
+    False,
+    True,
+)
+
+### Trialist Conversion
+final_df["trialist_conversions"] = np.where(
+    final_df["month_index"] == final_df["trial_duration_months"],
+    final_df["predicted_active_users"],
+    0,
+)
+### Churn Rate
+churn_rate_df = (
+    final_df.groupby(final_cohort_splits)[
+        ["churn", "predicted_active_users", "previous_predicted_active_users"]
+    ]
+    .sum()
+    .reset_index()
+)
+churn_rate_df["churn_rate"] = (
+    churn_rate_df["churn"] / churn_rate_df["previous_predicted_active_users"]
+).fillna(0)
