@@ -1,8 +1,8 @@
-""" Acquisition
+"""Acquisition
 --------------------------------
-NEED: 
+NEED:
 Access to GSheets API (more widely need to figure out google auth)
-Sections: 
+Sections:
     1. Calculating Subscription Acquisitions based on PAVs
     2. Calculating Subscription Acquisitions based on 6-month average (Naive)
     3. Introducing InDigital Uplift
@@ -15,11 +15,12 @@ Future Improvements:
 
 """
 
-
 from google.cloud import bigquery
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+from datetime import date
+
 client = bigquery.Client(project="indy-eng")
 
 # # Define the scope
