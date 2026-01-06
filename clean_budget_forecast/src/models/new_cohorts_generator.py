@@ -1,7 +1,9 @@
 # Introducing new cohorts that will be acquired in 2026
-from main import splits, added_splits
+from src.project_data.subscriptions_data import splits
 import pandas as pd
 import numpy as np
+
+added_splits = ["region", "term_price", "trial_price", "trial_duration"]
 
 
 def generate_new_cohorts(cohorts_df, forecast_months=27):

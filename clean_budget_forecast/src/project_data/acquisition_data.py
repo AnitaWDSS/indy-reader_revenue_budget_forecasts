@@ -17,36 +17,11 @@ Future Improvements:
 
 from google.cloud import bigquery
 import pandas as pd
-import gspread
 from google.oauth2.service_account import Credentials
 from datetime import date
 
 client = bigquery.Client(project="indy-eng")
 
-# # Define the scope
-# scopes = ['https://www.googleapis.com/auth/spreadsheets']
-
-# # Authenticate using the JSON key file
-# creds = Credentials.from_service_account_file('path/to/your/credentials.json', scopes=scopes)
-# client = gspread.authorize(creds)
-
-# # Open the spreadsheet (by name or URL)
-# sheet = client.open('Your Spreadsheet Name').sheet1
-# # Or by URL: sheet = client.open_by_url('your-sheet-url').sheet1
-
-# # Read data
-# data = sheet.get_all_records()  # Returns list of dictionaries
-# print(data)
-# # Authorize gspread
-# gc = gspread.authorize(creds)
-# #  Introducing CVR of different acquisition sources
-
-# # Uploading GSheet with CVR (Ideally would pull this directly from Adobe/ GA4 but nature of conversion data complicates this)
-
-# # Opening GSheet
-# sheet_url = "https://docs.google.com/spreadsheets/d/14bVpG_hj_YrBmHdCTTfckKHAkBOAlVSMeKUgEyzZqSk/edit?usp=sharing"
-
-# acq_spreadsheet = gc.open_by_url(sheet_url)
 
 conversions_by_source = acq_spreadsheet.sheet1
 
