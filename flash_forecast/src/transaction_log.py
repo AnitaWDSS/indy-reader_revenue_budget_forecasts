@@ -9,6 +9,7 @@ Below three key changes are made to the raw transaction data
 """
 
 from google.cloud import bigquery
+
 # Uploading transactions_enhanced dataset
 
 # Note - is_trialist definition considers a user as trialist on the day of their conversion to tenure
