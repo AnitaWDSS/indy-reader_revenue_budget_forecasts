@@ -5,7 +5,13 @@ Future Improvements:
 - Add more comprehensive tests.
 """
 
-from clean_budget_forecast.main import retention_curves
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from main import retention_curves
 
 checking_map = {
     "package_type": "DIGITAL Subscriber",
