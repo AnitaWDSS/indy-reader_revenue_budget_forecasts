@@ -5,7 +5,7 @@ Future Improvements:
 - Add more comprehensive tests.
 """
 
-from main import retention_curves
+from clean_budget_forecast.main import retention_curves
 
 checking_map = {
     "package_type": "DIGITAL Subscriber",
