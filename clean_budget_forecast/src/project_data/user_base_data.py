@@ -12,7 +12,7 @@ Future Improvements:
 """
 
 # Is this the right to way to import from another file in the same directory?
-from src.project_data.subscriptions_data import splits, subs_details_rundate
+from subscriptions_data import splits, subs_details_rundate
 from google.cloud import bigquery
 from datetime import date
 

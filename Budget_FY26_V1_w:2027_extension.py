@@ -1044,7 +1044,7 @@ def last_x_average(group, num_months=5, forecast_months=27):
     forecast_df = pd.DataFrame(forecast_values, columns=["transaction_month", "number_of_offers"])
     forecast_df["key"] = "forecast"
 
-    # Combine actuals and forecasts
+    # Combine acquisition actuals and forecasts
     combined = pd.concat([group, forecast_df], ignore_index=True)
     combined["transaction_month"] = pd.to_datetime(combined["transaction_month"])
 

@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from main import retention_curves
 
@@ -26,3 +26,5 @@ retention_curves[
     )
     & (retention_curves["term_cadence"] == checking_map["term_cadence"])
 ]
+
+print()

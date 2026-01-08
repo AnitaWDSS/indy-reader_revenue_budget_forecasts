@@ -17,35 +17,58 @@ Future Improvements:
 
 from google.cloud import bigquery
 import pandas as pd
+
 from google.oauth2.service_account import Credentials
 from datetime import date
+from user_base_data import cohort_df
+
 
 client = bigquery.Client(project="indy-eng")
 
+# Introduce % of conversions and CVR per subscription source
+conversion_query = """
+SELECT
+    *
+FROM `indy-eng.reader_revenue_external.conversions_per_subscription_experience`
+"""
 
-conversions_by_source = acq_spreadsheet.sheet1
+query_job = client.query(conversion_query)
+conversions_by_source = query_job.to_dataframe()
 
+cvr_query = """
+SELECT
+    * 
+    FROM `indy-eng.reader_revenue_external.cvr_per_subscription_experience`
 
-# Use get_worksheet on the spreadsheet object to get the second worksheet (index 1)
-cvr_by_source = acq_spreadsheet.get_worksheet(1)
+"""
+
+query_job = client.query(cvr_query)
+cvr_by_source = query_job.to_dataframe()
 
 #  Turning into dataframes
+### Are these needed now that we pull directly from BigQuery?
 conv_by_source_df = pd.DataFrame(conversions_by_source.get_all_records())
 cvr_by_source_df = pd.DataFrame(cvr_by_source.get_all_records())
 
-# Introducing Emily's traffic assumptions
+# Introducing FY26.V2 traffic assumptions
+traffic_query = """
+SELECT
+    *
+FROM `indy-eng.reader_revenue_external.fy26-v2_traffic_predictions` 
+"""
+query_job = client.query(traffic_query)
+traffic_forecast = query_job.to_dataframe()
 
-sheet_url = "https://docs.google.com/spreadsheets/d/1u1luHB9rRBj9ih0x9e2kBF2CA9Dj8RjRaSkvf1jZc9Q/edit?usp=sharing"
+traffic_forecast_df = pd.DataFrame(traffic_forecast.get_all_records())
 
-traffic_forecast = gc.open_by_url(sheet_url)
 
 # Note: Only UK+ROW subscriptions will be tied to traffic, US traffic has been removed from the below
-PAV_forecast_df = pd.DataFrame(traffic_forecast.get_worksheet(2).get_all_records())
+PAV_forecast_df = traffic_forecast_df[["date", "PAV_Forecast"]]
 PAV_forecast_df = PAV_forecast_df[
     pd.to_datetime(PAV_forecast_df["date"]).dt.date > date(2025, 12, 1)
 ]
 
-HPPU_forecast_df = pd.DataFrame(traffic_forecast.get_worksheet(4).get_all_records())
+HPPU_forecast_df = traffic_forecast_df[["date", "HPPU_Forecast"]]
 HPPU_forecast_df = HPPU_forecast_df[
     pd.to_datetime(HPPU_forecast_df["date"]).dt.date > date(2025, 12, 1)
 ]
@@ -85,13 +108,6 @@ HPPU_forecast_df["New Subscribers"] = (
     * HPPU_forecast_df["CVR"].str.rstrip("%").astype("float")
     / 100.0
 )
-
-print("PAV Forecast:")
-display(PAV_forecast_df.head())
-
-
-print("\nHPPU Forecast:")
-display(HPPU_forecast_df.head())
 
 # Grouping HPPU and PAG acquisitions together
 forecasted_cohorts = pd.concat(
@@ -177,7 +193,11 @@ forecasted_subs = forecasted_cohorts.groupby("date")["New Subscribers"].sum()
 
 forecasted_subs = pd.DataFrame(forecasted_subs).reset_index()
 
+
+# Add COP and Student Acquisitions based on 6-month average
 six_months_ago = (pd.Timestamp.now() - pd.DateOffset(months=6)).replace(day=1).date()
+
+
 current_users_breakdown = cohort_df[
     (
         (
@@ -267,3 +287,5 @@ broken_term = (
     & (combined["term_price"] == "GBP99.00")
 )
 combined.loc[broken_term, "forecasted_subs"] = 0
+
+print(combined)
