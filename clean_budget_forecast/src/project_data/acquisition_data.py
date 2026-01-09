@@ -17,13 +17,19 @@ Future Improvements:
 
 from google.cloud import bigquery
 import pandas as pd
-
-from google.oauth2.service_account import Credentials
 from datetime import date
 from user_base_data import cohort_df
 
 
-client = bigquery.Client(project="indy-eng")
+client = bigquery.Client(
+    project="indy-eng",
+    client_options={
+        "scopes": [
+            "https://www.googleapis.com/auth/drive",
+            "https://www.googleapis.com/auth/cloud-platform",
+        ]
+    },
+)
 
 # Introduce % of conversions and CVR per subscription source
 conversion_query = """
@@ -33,7 +39,7 @@ FROM `indy-eng.reader_revenue_external.conversions_per_subscription_experience`
 """
 
 query_job = client.query(conversion_query)
-conversions_by_source = query_job.to_dataframe()
+conv_by_source_df = query_job.to_dataframe()
 
 cvr_query = """
 SELECT
@@ -43,12 +49,7 @@ SELECT
 """
 
 query_job = client.query(cvr_query)
-cvr_by_source = query_job.to_dataframe()
-
-#  Turning into dataframes
-### Are these needed now that we pull directly from BigQuery?
-conv_by_source_df = pd.DataFrame(conversions_by_source.get_all_records())
-cvr_by_source_df = pd.DataFrame(cvr_by_source.get_all_records())
+cvr_by_source_df = query_job.to_dataframe()
 
 # Introducing FY26.V2 traffic assumptions
 traffic_query = """
@@ -57,25 +58,22 @@ SELECT
 FROM `indy-eng.reader_revenue_external.fy26-v2_traffic_predictions` 
 """
 query_job = client.query(traffic_query)
-traffic_forecast = query_job.to_dataframe()
-
-traffic_forecast_df = pd.DataFrame(traffic_forecast.get_all_records())
-
+traffic_forecast_df = query_job.to_dataframe()
 
 # Note: Only UK+ROW subscriptions will be tied to traffic, US traffic has been removed from the below
-PAV_forecast_df = traffic_forecast_df[["date", "PAV_Forecast"]]
+PAV_forecast_df = traffic_forecast_df[["date", "PAVs"]]
 PAV_forecast_df = PAV_forecast_df[
     pd.to_datetime(PAV_forecast_df["date"]).dt.date > date(2025, 12, 1)
 ]
 
-HPPU_forecast_df = traffic_forecast_df[["date", "HPPU_Forecast"]]
+HPPU_forecast_df = traffic_forecast_df[["date", "HPPU_PVs"]]
 HPPU_forecast_df = HPPU_forecast_df[
     pd.to_datetime(HPPU_forecast_df["date"]).dt.date > date(2025, 12, 1)
 ]
 
 # Defining subscription source
-PAV_forecast_df["Subscription Experience"] = "Premium Article Gate"
-HPPU_forecast_df["Subscription Experience"] = "HPPU / Section PU"
+PAV_forecast_df["Subscription_Experience"] = "Premium Article Gate"
+HPPU_forecast_df["Subscription_Experience"] = "HPPU / Section PU"
 
 # NOTE: This adds all traffic UK+ROW into UK region - change if possible
 PAV_forecast_df["region"] = "UK"
@@ -84,36 +82,32 @@ HPPU_forecast_df["region"] = "UK"
 # Merging CVR into traffic Forecasts
 PAV_forecast_df = pd.merge(
     PAV_forecast_df,
-    cvr_by_source_df[["Subscription Experience", "CVR"]],
-    on="Subscription Experience",
+    cvr_by_source_df[["Subscription_Experience", "CVR"]],
+    on="Subscription_Experience",
     how="left",
 )
 HPPU_forecast_df = pd.merge(
     HPPU_forecast_df,
-    cvr_by_source_df[["Subscription Experience", "CVR"]],
-    on="Subscription Experience",
+    cvr_by_source_df[["Subscription_Experience", "CVR"]],
+    on="Subscription_Experience",
     how="left",
 )
 
 # Calculate new subscribers from PAV forecasts
 PAV_forecast_df["New Subscribers"] = (
-    PAV_forecast_df["PAVs"]
-    * PAV_forecast_df["CVR"].str.rstrip("%").astype("float")
-    / 100.0
+    PAV_forecast_df["PAVs"] * PAV_forecast_df["CVR"] / 100.0
 )
 
 # Calculate new subscribers from HPPU forecasts
 HPPU_forecast_df["New Subscribers"] = (
-    HPPU_forecast_df["UK_PVs"]
-    * HPPU_forecast_df["CVR"].str.rstrip("%").astype("float")
-    / 100.0
+    HPPU_forecast_df["HPPU_PVs"] * HPPU_forecast_df["CVR"] / 100.0
 )
 
 # Grouping HPPU and PAG acquisitions together
 forecasted_cohorts = pd.concat(
     [
-        PAV_forecast_df[["date", "New Subscribers", "Subscription Experience"]],
-        HPPU_forecast_df[["date", "New Subscribers", "Subscription Experience"]],
+        PAV_forecast_df[["date", "New Subscribers", "Subscription_Experience"]],
+        HPPU_forecast_df[["date", "New Subscribers", "Subscription_Experience"]],
     ],
     ignore_index=True,
 )
@@ -126,7 +120,7 @@ new_data = []
 for source in sources:
     for month in months_2026:
         new_data.append(
-            {"date": month, "New Subscribers": 0, "Subscription Experience": source}
+            {"date": month, "New Subscribers": 0, "Subscription_Experience": source}
         )
 
 new_sources_df = pd.DataFrame(new_data)
@@ -137,56 +131,52 @@ forecasted_cohorts.date = pd.to_datetime(forecasted_cohorts.date).dt.date
 #  Adding % of conversions from each sub journey
 
 forecasted_cohorts = forecasted_cohorts.merge(
-    conv_by_source_df[["Subscription Experience", "%"]],
-    on="Subscription Experience",
+    conv_by_source_df[["Subscription_Experience", "Percentage"]],
+    on="Subscription_Experience",
     how="left",
 )
 
 # Calculate number of acquisitions for Navigation and Direct based on remaining acquisition %
 forecasted_navigation = forecasted_cohorts.loc[
-    forecasted_cohorts["Subscription Experience"] == "Navigation", "New Subscribers"
+    forecasted_cohorts["Subscription_Experience"] == "Navigation", "New Subscribers"
 ] = (
     forecasted_cohorts[
-        forecasted_cohorts["Subscription Experience"] == "Premium Article Gate"
+        forecasted_cohorts["Subscription_Experience"] == "Premium Article Gate"
     ]["New Subscribers"].values[0]
-    * forecasted_cohorts[forecasted_cohorts["Subscription Experience"] == "Navigation"][
-        "%"
+    * forecasted_cohorts[forecasted_cohorts["Subscription_Experience"] == "Navigation"][
+        "Percentage"
     ]
-    .str.rstrip("%")
-    .astype("float")
     / 100.0
     / forecasted_cohorts[
-        forecasted_cohorts["Subscription Experience"] == "Premium Article Gate"
-    ]["%"]
-    .str.rstrip("%")
-    .astype("float")
+        forecasted_cohorts["Subscription_Experience"] == "Premium Article Gate"
+    ]["Percentage"]
     * 100.0
 )
 
 PAG_metrics = (
     forecasted_cohorts[
-        forecasted_cohorts["Subscription Experience"] == "Premium Article Gate"
-    ][["date", "New Subscribers", "%"]]
+        forecasted_cohorts["Subscription_Experience"] == "Premium Article Gate"
+    ][["date", "New Subscribers", "Percentage"]]
     .copy()
-    .rename(columns={"%": "PAG_%", "New Subscribers": "PAG_New_Subscribers"})
+    .rename(columns={"Percentage": "PAG_%", "New Subscribers": "PAG_New_Subscribers"})
 )
 forecasted_cohorts = forecasted_cohorts.merge(PAG_metrics, on="date", how="left")
 
 #  Calculating new acquisitions from Navigation
 forecasted_cohorts.loc[
-    forecasted_cohorts["Subscription Experience"] == "Navigation", "New Subscribers"
+    forecasted_cohorts["Subscription_Experience"] == "Navigation", "New Subscribers"
 ] = (
     forecasted_cohorts["PAG_New_Subscribers"]
-    * (forecasted_cohorts["%"].str.rstrip("%").astype("float") / 100.0)
-    / (forecasted_cohorts["PAG_%"].str.rstrip("%").astype("float") / 100.0)
+    * (forecasted_cohorts["Percentage"] / 100.0)
+    / (forecasted_cohorts["PAG_%"] / 100.0)
 )
 #  Calculating new acquisitions from Direct
 forecasted_cohorts.loc[
-    forecasted_cohorts["Subscription Experience"] == "Direct", "New Subscribers"
+    forecasted_cohorts["Subscription_Experience"] == "Direct", "New Subscribers"
 ] = (
     forecasted_cohorts["PAG_New_Subscribers"]
-    * (forecasted_cohorts["%"].str.rstrip("%").astype("float") / 100.0)
-    / (forecasted_cohorts["PAG_%"].str.rstrip("%").astype("float") / 100.0)
+    * (forecasted_cohorts["Percentage"] / 100.0)
+    / (forecasted_cohorts["PAG_%"] / 100.0)
 )
 
 forecasted_subs = forecasted_cohorts.groupby("date")["New Subscribers"].sum()
