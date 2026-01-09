@@ -4,8 +4,8 @@ Parameters:
 
 """
 
-from subscriptions_data import subs_details_rundate
-from user_base_data import client
+from .subscriptions_data import subs_details_rundate
+from .user_base_data import client
 
 query = f"""
 WITH

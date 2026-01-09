@@ -1,4 +1,4 @@
-from pandas import pd
+import pandas as pd
 
 
 def generate_refund_forecast(refunds_df, forecast_months=27):

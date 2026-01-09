@@ -7,10 +7,9 @@ Parameters:
 
 """
 
-from subscriptions_data import subs_details_rundate
-from user_base_data import start_date, forecast_to_date
+from .subscriptions_data import subs_details_rundate
+from .user_base_data import start_date, forecast_to_date, client
 import pandas as pd
-from user_base_data import client
 
 query = f"""
   SELECT

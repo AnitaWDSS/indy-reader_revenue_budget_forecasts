@@ -18,7 +18,7 @@ Future Improvements:
 from google.cloud import bigquery
 import pandas as pd
 from datetime import date
-from user_base_data import cohort_df
+from .user_base_data import cohort_df
 
 
 client = bigquery.Client(
