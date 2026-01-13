@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+
+# Add parent of parent of parent to Python path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from main import cohort_joined_converted_df
 from datetime import date
 
@@ -74,3 +79,11 @@ cohort_joined_converted_df[mask].groupby(["calendar_month"])[
 cohort_joined_converted_df[mask_2027][
     ["converted_predicted_amortised_revenue", "predicted_active_users"]
 ].sum().reset_index()
+
+print(
+    cohort_joined_converted_df[mask_2027][
+        ["converted_predicted_amortised_revenue", "predicted_active_users"]
+    ]
+    .sum()
+    .reset_index()
+)

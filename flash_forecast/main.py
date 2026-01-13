@@ -13,11 +13,16 @@ import numpy as np
 from datetime import date
 from src.transaction_log import transactions_df
 from src.calculate_user_base import calculate_user_base
+import sys
+from pathlib import Path
+
+# Add parent of parent of parent to Python path
+sys.path.insert(0, str(Path(__file__).parent))
 from clean_budget_forecast.src.project_data.currency_conv_data import (
     currency_conversion_extended_df,
 )
-from clean_budget_forecast.src.models.apply_retention_curves
-from clean_budget_forecast.main
+
+
 """## Summed Local Price
 
 Creates the summed local prices by:
