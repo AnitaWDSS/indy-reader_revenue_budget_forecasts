@@ -48,6 +48,7 @@ SELECT
     term_price,
     trial_price,
     trial_cadence,
+    trial_duration,
     DATE_DIFF(CURRENT_DATE(), DATE(start_date), MONTH) AS month_index,
     year_month,
     date

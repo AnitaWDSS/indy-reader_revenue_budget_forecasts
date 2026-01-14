@@ -11,16 +11,12 @@ import pandas as pd
 import random
 import numpy as np
 from datetime import date
-from src.transaction_log import transactions_df
-from src.calculate_user_base import calculate_user_base
-import sys
-from pathlib import Path
-
-# Add parent of parent of parent to Python path
-sys.path.insert(0, str(Path(__file__).parent))
+from flash_forecast.src.transaction_log import transactions_df
+from flash_forecast.src.calculate_user_base import calculate_user_base
 from clean_budget_forecast.src.project_data.currency_conv_data import (
     currency_conversion_extended_df,
 )
+import os
 
 
 """## Summed Local Price
@@ -136,6 +132,7 @@ users_count_df["relevant_cadence_months"] = users_count_df["relevant_cadence"].m
 # Renaming for clarity
 clean_transactions_df = users_count_df
 
+
 # Ensure transactions are only amortised throughout the subscription cadence if they're payments - refunds do not get amortised
 clean_transactions_df["amortised_summed_local_price"] = np.where(
     clean_transactions_df["summed_local_price"] >= 0,
@@ -168,6 +165,9 @@ grouping_columns = [
     "amortised_summed_local_price",
     "relevant_cadence_months",  # Needs to be last column
 ]
+# Debug dump before failure
+if os.getenv("DEBUG_DUMP_DF") == "1":
+    clean_transactions_df.to_parquet("debug/clean_transactions_df.parquet")
 
 # Executes calculation of base function
 amortised_transactions_df = (
