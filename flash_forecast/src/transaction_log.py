@@ -61,5 +61,6 @@ client = bigquery.Client(project="indy-eng")
 query_job = client.query(query)
 transactions_df = query_job.to_dataframe()
 
+
 # Check max_date passed (Day before current date)
 #  Check total number of currencies in raw data (should only be GBP,USD,EUR)

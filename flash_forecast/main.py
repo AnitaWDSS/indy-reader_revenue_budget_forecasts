@@ -8,9 +8,7 @@ It is constitued by the following main sections:
 """
 
 import pandas as pd
-import random
 import numpy as np
-from datetime import date
 from flash_forecast.src.transaction_log import transactions_df
 from flash_forecast.src.calculate_user_base import calculate_user_base
 from clean_budget_forecast.src.project_data.currency_conv_data import (
@@ -114,6 +112,7 @@ users_count_df["relevant_cadence"] = np.where(
 
 # Turn their cadence into number of months they are active for (for anything smaller than a month, we limit it to the moth in which a payment was made)
 cadence_map = {
+    "No trial": 1,
     "day": 1,
     "week": 1,
     "2 week": 1,
@@ -167,7 +166,9 @@ grouping_columns = [
 ]
 # Debug dump before failure
 if os.getenv("DEBUG_DUMP_DF") == "1":
-    clean_transactions_df.to_parquet("debug/clean_transactions_df.parquet")
+    clean_transactions_df.to_parquet(
+        "flash_forecast/debug/clean_transactions_df.parquet"
+    )
 
 # Executes calculation of base function
 amortised_transactions_df = (
