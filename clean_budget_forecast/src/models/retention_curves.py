@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from lifelines import KaplanMeierFitter
-from src.project_data.subscriptions_data import splits
+from clean_budget_forecast.src.project_data.subscriptions_data import splits
 
 
 def naive_forecast(survival_df, months_to_extend, plot=False):

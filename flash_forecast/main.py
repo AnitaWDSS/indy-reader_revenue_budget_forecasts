@@ -11,11 +11,15 @@ import pandas as pd
 import numpy as np
 from flash_forecast.src.transaction_log import transactions_df
 from flash_forecast.src.calculate_user_base import calculate_user_base
-
+from flash_forecast.src.users_due_to_renew import renewal_due_df
 from clean_budget_forecast.src.project_data.currency_conv_data import (
     currency_conversion_extended_df,
 )
-
+from clean_budget_forecast.src.models.retention_curves import apply_km
+from clean_budget_forecast.src.project_data.subscriptions_data import (
+    retention_curves_df,
+    splits,
+)
 
 """## Summed Local Price
 
@@ -199,9 +203,39 @@ GBP_amortised_transactions_df["gbp_amortised_revenue"] = (
 
 """# Forecasting EOM Performance (With Retention Curves)
 
-1. Identify number of users due to renew in the current month
-2. Upload rentention curves
-3. Calculate MoM retention likelihood difference for all month_indexes found among users due to renew
-4. Use said difference to calculate expected EOM number of billed users
-5. Calculate expected amount of amortised revenue
+
+1. Upload rentention curves DONE
+2. Calculate MoM retention likelihood difference for all month_indexes found among users due to renew DONE
+3. Add in acquisition numbers (can take from budget forecast directly)
+4. Add all to get full user base about to renew 
+5. Calculate forecasted revenue from renewed users
+6. Import to Google sheets or Domo 
 """
+# Calculate retention curves
+retention_curves = retention_curves_df.groupby(splits, group_keys=False).apply(apply_km)
+
+# Grouping users due to renew by relevant columns
+subs_to_renew_df = (
+    renewal_due_df.groupby(
+        [
+            "month_index",
+            "customer_type",
+            "package_type",
+            "trial_price",
+            "trial_cadence",
+            "term_price",
+            "term_cadence",
+        ]
+    )["piano_uid"]
+    .count()
+    .reset_index(name="user_count")
+)
+# Calculating expected renewals using retention curves
+subs_to_renew_df = subs_to_renew_df.merge(
+    retention_curves[["month_index", "piecewise_retention_rate"]],
+    how="left",
+    on=["month_index", "month_index"],
+)
+subs_to_renew_df["renewed_subs"] = (
+    subs_to_renew_df["piecewise_retention_rate"] * subs_to_renew_df["user_count"]
+)

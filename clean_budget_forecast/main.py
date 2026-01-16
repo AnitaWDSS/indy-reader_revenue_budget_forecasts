@@ -8,20 +8,25 @@ Future Improvements:
 
 import pandas as pd
 import numpy as np
-from src.models.retention_curves import apply_km
-from src.project_data.subscriptions_data import retention_curves_df, splits
-from src.project_data.user_base_data import cohort_df, base_splits
+from clean_budget_forecast.src.models.retention_curves import apply_km
+from clean_budget_forecast.src.project_data.subscriptions_data import (
+    retention_curves_df,
+    splits,
+)
+from clean_budget_forecast.src.project_data.user_base_data import cohort_df, base_splits
 from datetime import date
-from src.models.new_cohorts_generator import generate_new_cohorts
-from src.project_data.acquisition_data import combined
-from src.models.fill_in_acq_terms import extend_aquisition_data
-from src.models.apply_retention_curves import recursive_forecast
-from src.models.x_month_average import last_x_average
-from src.project_data.offer_data import offers_df
-from src.models.offers_user_base import calculate_user_base
-from src.project_data.currency_conv_data import currency_conversion_extended_df
-from src.project_data.refunds_data import refunds_df
-from src.models.refund_forecast import generate_refund_forecast
+from clean_budget_forecast.src.models.new_cohorts_generator import generate_new_cohorts
+from clean_budget_forecast.src.project_data.acquisition_data import combined
+from clean_budget_forecast.src.models.fill_in_acq_terms import extend_aquisition_data
+from clean_budget_forecast.src.models.apply_retention_curves import recursive_forecast
+from clean_budget_forecast.src.models.x_month_average import last_x_average
+from clean_budget_forecast.src.project_data.offer_data import offers_df
+from clean_budget_forecast.src.models.offers_user_base import calculate_user_base
+from clean_budget_forecast.src.project_data.currency_conv_data import (
+    currency_conversion_extended_df,
+)
+from clean_budget_forecast.src.project_data.refunds_data import refunds_df
+from clean_budget_forecast.src.models.refund_forecast import generate_refund_forecast
 
 # Produce Kaplan-Meier retention curves
 retention_curves = retention_curves_df.groupby(splits, group_keys=False).apply(apply_km)
