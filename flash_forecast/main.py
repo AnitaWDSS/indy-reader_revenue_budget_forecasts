@@ -11,10 +11,10 @@ import pandas as pd
 import numpy as np
 from flash_forecast.src.transaction_log import transactions_df
 from flash_forecast.src.calculate_user_base import calculate_user_base
+
 from clean_budget_forecast.src.project_data.currency_conv_data import (
     currency_conversion_extended_df,
 )
-import os
 
 
 """## Summed Local Price
@@ -120,6 +120,7 @@ cadence_map = {
     "quarter": 3,
     "6 month": 6,
     "7 month": 7,
+    "Unclassified: 7 months": 1,
     "year": 12,
     "3 year": 36,
 }
@@ -164,11 +165,6 @@ grouping_columns = [
     "amortised_summed_local_price",
     "relevant_cadence_months",  # Needs to be last column
 ]
-# Debug dump before failure
-if os.getenv("DEBUG_DUMP_DF") == "1":
-    clean_transactions_df.to_parquet(
-        "flash_forecast/debug/clean_transactions_df.parquet"
-    )
 
 # Executes calculation of base function
 amortised_transactions_df = (
@@ -187,6 +183,9 @@ amortised_transactions_df["amortised_revenue"] = np.where(
 )
 
 """## Currency Conversion"""
+currency_conversion_extended_df["Date"] = pd.to_datetime(
+    currency_conversion_extended_df["Date"]
+)
 GBP_amortised_transactions_df = amortised_transactions_df.merge(
     currency_conversion_extended_df,
     how="left",
