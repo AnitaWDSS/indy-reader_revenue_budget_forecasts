@@ -44,7 +44,7 @@ SELECT
     tax_rate,
     tax_country,
     term_cadence,
-    region,
+    geo,
     term_price,
     trial_price,
     trial_cadence,

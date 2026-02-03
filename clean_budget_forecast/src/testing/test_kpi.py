@@ -12,7 +12,7 @@ final_df[
     & (final_df["trial_duration_months"] == 6)
     & (final_df["trial_price_value"] == 1)
     & (final_df["term_cadence_months"] == 12)
-    & (final_df["region"] == "EUR")
+    & (final_df["geo"] == "EUR")
     & (final_df["signup_cohort"] == date(2025, 6, 1))
 ]
 
@@ -22,6 +22,6 @@ churn_rate_df[
     & (churn_rate_df["trial_duration_months"] == 3)
     & (churn_rate_df["trial_price_value"] == 1)
     & (churn_rate_df["term_cadence_months"] == 12)
-    & (churn_rate_df["region"] == "UK")
+    & (churn_rate_df["geo"] == "UK")
     & (churn_rate_df["calendar_month"] == date(2025, 10, 1))
 ]

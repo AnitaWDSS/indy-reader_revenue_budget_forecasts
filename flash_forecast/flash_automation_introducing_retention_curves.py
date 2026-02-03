@@ -62,7 +62,7 @@ SELECT
     tax_rate,
     tax_country,
     term_cadence,
-    region,
+    geo,
     term_price,
     trial_price,
     trial_cadence,
@@ -97,7 +97,7 @@ grouping_columns = [
     "term_id",
     "currency",
     "term_cadence",
-    "region",
+    "geo",
     "customer_type",
     "package_type",
     "is_trialist",
@@ -131,7 +131,7 @@ users_grouping_columns = [
     "term_id",
     "currency",
     "term_cadence",
-    "region",
+    "geo",
     "customer_type",
     "package_type",
     "is_trialist",
@@ -201,7 +201,7 @@ grouping_columns = [
     "term_name",
     "term_id",
     "term_cadence",
-    "region",
+    "geo",
     "customer_type",
     "package_type",
     "is_trialist",
@@ -336,7 +336,7 @@ SELECT
   subscription_trial_end_date,
   next_billing_date,
   month_index,
-  region,
+  geo,
   term_name,
   trial_cadence,
   term_cadence,
@@ -377,21 +377,21 @@ retention_curves_df
 renewal_due_df['next_billing_date'] = pd.to_datetime(renewal_due_df['next_billing_date'])
 renewal_due_df['renewal_month']= renewal_due_df['next_billing_date'].dt.to_period('M').dt.to_timestamp()
 
-renewal_due_count= renewal_due_df.groupby(['region','trial_cadence','trial_price','term_cadence','term_price','term_type','renewal_month','month_index'])['piano_uid'].count().reset_index(name='piano_uid_count')
+renewal_due_count= renewal_due_df.groupby(['geo','trial_cadence','trial_price','term_cadence','term_price','term_type','renewal_month','month_index'])['piano_uid'].count().reset_index(name='piano_uid_count')
 
-renewal_due_count[['region','term_type', 'term_cadence','trial_cadence', 'term_price', "trial_price",'piano_uid_count']].sort_values(['piano_uid_count'], ascending=False)
+renewal_due_count[['geo','term_type', 'term_cadence','trial_cadence', 'term_price', "trial_price",'piano_uid_count']].sort_values(['piano_uid_count'], ascending=False)
 
 renewal_due_count['next_month_index'] = renewal_due_count['month_index'] + 1
 renewal_due_count['local_price'] = renewal_due_count['term_price'].str.replace(r'[^\d.,\-]', '', regex=True)
 renewal_due_count['local_price'] = renewal_due_count['local_price'].astype(float)
 
-forecasted_renewals=pd.merge(renewal_due_count, retention_curves_df[['month_index','region','cadence','term_type','average_retention_rates_smoothed']], how='left', left_on=['next_month_index', 'region','term_cadence', 'term_type'], right_on=['month_index', 'region','cadence','term_type'] ).rename(columns={'average_retention_rates_smoothed': 'next_month_retention_rate', 'month_index_x': 'current_month_index'}).drop(columns=['month_index_y'])
-forecasted_renewals=pd.merge(forecasted_renewals, retention_curves_df[['month_index','region','cadence','term_type','average_retention_rates_smoothed']], how='left', left_on=['current_month_index', 'region','term_cadence', 'term_type'], right_on=['month_index', 'region','cadence','term_type'] ).rename(columns={'average_retention_rates_smoothed': 'current_retention_rate','cadence_x':'cadence'}).drop(columns=['month_index','cadence_y'])
+forecasted_renewals=pd.merge(renewal_due_count, retention_curves_df[['month_index','geo','cadence','term_type','average_retention_rates_smoothed']], how='left', left_on=['next_month_index', 'geo','term_cadence', 'term_type'], right_on=['month_index', 'geo','cadence','term_type'] ).rename(columns={'average_retention_rates_smoothed': 'next_month_retention_rate', 'month_index_x': 'current_month_index'}).drop(columns=['month_index_y'])
+forecasted_renewals=pd.merge(forecasted_renewals, retention_curves_df[['month_index','geo','cadence','term_type','average_retention_rates_smoothed']], how='left', left_on=['current_month_index', 'geo','term_cadence', 'term_type'], right_on=['month_index', 'geo','cadence','term_type'] ).rename(columns={'average_retention_rates_smoothed': 'current_retention_rate','cadence_x':'cadence'}).drop(columns=['month_index','cadence_y'])
 
 forecasted_renewals['forecasted_renewals'] = round(forecasted_renewals['piano_uid_count'] * forecasted_renewals['next_month_retention_rate']/ forecasted_renewals['current_retention_rate'],2)
 
 # Used to quickly calculate how much forecasted return
-forecasted_renewals.groupby(['region','term_type','trial_cadence','term_cadence','trial_price','term_price'])['forecasted_renewals'].sum().reset_index(name='forecasted_renewals').sort_values('forecasted_renewals', ascending=False)
+forecasted_renewals.groupby(['geo','term_type','trial_cadence','term_cadence','trial_price','term_price'])['forecasted_renewals'].sum().reset_index(name='forecasted_renewals').sort_values('forecasted_renewals', ascending=False)
 
 final_current_df=amortised_users_grouped_transactions_converted_currency_df
 
@@ -401,10 +401,10 @@ forecasted_renewals.trial_price
 
 forecasted_and_current_revenue=pd.merge(
     final_current_df,
-    forecasted_renewals[['region', 'trial_cadence', 'term_cadence', 'term_price','term_type','forecasted_renewals','local_price','renewal_month','current_month_index', 'trial_price']],
+    forecasted_renewals[['geo', 'trial_cadence', 'term_cadence', 'term_price','term_type','forecasted_renewals','local_price','renewal_month','current_month_index', 'trial_price']],
     how='left',
-    left_on=['region', 'trial_cadence','trial_price', 'term_cadence', 'term_price','term_type','summed_local_price','year_month','month_index'],
-    right_on=['region', 'trial_cadence','trial_price','term_cadence', 'term_price','term_type', 'local_price','renewal_month', 'current_month_index'])
+    left_on=['geo', 'trial_cadence','trial_price', 'term_cadence', 'term_price','term_type','summed_local_price','year_month','month_index'],
+    right_on=['geo', 'trial_cadence','trial_price','term_cadence', 'term_price','term_type', 'local_price','renewal_month', 'current_month_index'])
 
 forecasted_and_current_revenue[forecasted_and_current_revenue['forecasted_renewals'].isna()== False]
 
@@ -453,7 +453,7 @@ forecasted_revenue_this_month = forecasted_and_current_revenue[
     (forecasted_and_current_revenue['year_month'].dt.month == current_date.month)
 ]
 
-forecasted_revenue_this_month.groupby(['region', 'is_donation'])['forecasted_gbp_amortised_revenue'].sum()
+forecasted_revenue_this_month.groupby(['geo', 'is_donation'])['forecasted_gbp_amortised_revenue'].sum()
 
 forecasted_and_current_revenue[
     (forecasted_and_current_revenue['year_month'].dt.year == current_date.year) &
@@ -466,7 +466,7 @@ forecasted_and_current_revenue[
 
 is_donation_list=['Recurring Donations','Single Donation']
 forecasted_revenue_this_month['is_donation'] = forecasted_revenue_this_month['term_type'].isin(is_donation_list)
-checking_values=forecasted_revenue_this_month.groupby(['region','is_donation', 'trial_price', 'trial_cadence', 'term_price', 'term_cadence', 'tenure'])['forecasted_user_base'].sum().sort_values(ascending=False)
+checking_values=forecasted_revenue_this_month.groupby(['geo','is_donation', 'trial_price', 'trial_cadence', 'term_price', 'term_cadence', 'tenure'])['forecasted_user_base'].sum().sort_values(ascending=False)
 
 checking_values= checking_values.reset_index()
 checking_values[checking_values['tenure'] == 'tenured']

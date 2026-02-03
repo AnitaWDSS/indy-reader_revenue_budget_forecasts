@@ -3,7 +3,7 @@ from src.project_data.subscriptions_data import splits
 import pandas as pd
 import numpy as np
 
-added_splits = ["region", "term_price", "trial_price", "trial_duration"]
+added_splits = ["geo", "term_price", "trial_price", "trial_duration"]
 
 
 def generate_new_cohorts(cohorts_df, forecast_months=27):

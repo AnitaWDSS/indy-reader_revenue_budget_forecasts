@@ -35,7 +35,7 @@ grouping_columns = [
     "term_id",
     "currency",
     "term_cadence",
-    "region",
+    "geo",
     "customer_type",
     "package_type",
     "is_trialist",
@@ -81,7 +81,7 @@ users_grouping_columns = [
     "term_id",
     "currency",
     "term_cadence",
-    "region",
+    "geo",
     "customer_type",
     "package_type",
     "is_trialist",
@@ -153,7 +153,7 @@ grouping_columns = [
     "term_name",
     "term_id",
     "term_cadence",
-    "region",
+    "geo",
     "customer_type",
     "package_type",
     "is_trialist",
@@ -239,3 +239,9 @@ subs_to_renew_df = subs_to_renew_df.merge(
 subs_to_renew_df["renewed_subs"] = (
     subs_to_renew_df["piecewise_retention_rate"] * subs_to_renew_df["user_count"]
 )
+
+# Assign the filled result back to the column
+subs_to_renew_df["renewed_subs"] = subs_to_renew_df["renewed_subs"].fillna(
+    subs_to_renew_df["user_count"]
+)
+print(subs_to_renew_df.loc[subs_to_renew_df.month_index > 0])

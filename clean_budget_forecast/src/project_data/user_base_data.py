@@ -22,7 +22,7 @@ base_splits = splits + [
     "term_price",
     "term_price_value",
     "payment_currency",
-    "region",
+    "geo",
     "signup_cohort",
     "trial_duration",
 ]

@@ -17,7 +17,7 @@ dimensions = [
     # 'term_price',
     "term_price_value",
     "payment_currency",
-    "region",
+    "geo",
     "signup_cohort",
     # 'trial_duration',
     "calendar_month",
@@ -50,7 +50,7 @@ cohort_joined_converted_df[
     & (cohort_joined_converted_df["trial_duration_months"] == 6)
     & (cohort_joined_converted_df["trial_price_value"] == "1")
     & (cohort_joined_converted_df["term_cadence_months"] == 12)
-    & (cohort_joined_converted_df["region"] == "EUR")
+    & (cohort_joined_converted_df["geo"] == "EUR")
     & (cohort_joined_converted_df["signup_cohort"] == date(2025, 6, 1))
 ]
 
@@ -59,7 +59,7 @@ final_df[
     & (final_df["trial_duration_months"] == 6)
     & (final_df["trial_price_value"] == 1.00)
     & (final_df["term_cadence_months"] == 12)
-    & (final_df["region"] == "UK")
+    & (final_df["geo"] == "UK")
     & (final_df["signup_cohort"] == date(2025, 9, 1))
 ]
 

@@ -11,8 +11,8 @@ def generate_refund_forecast(refunds_df, forecast_months=27):
         last_month = refunds_df["yearmonth"].max()
         new_month = last_month + 1  # forecast next month
 
-        # Forecast separately for each region
-        for region, group in refunds_df.groupby("region"):
+        # Forecast separately for each geo
+        for geo, group in refunds_df.groupby("geo"):
             group = group.sort_values("yearmonth")
 
             # Take last 6 actual/forecasted months
@@ -26,7 +26,7 @@ def generate_refund_forecast(refunds_df, forecast_months=27):
 
             # Create new forecast row
             new_row = {
-                "region": region,
+                "geo": geo,
                 "yearmonth": new_month,
                 "refund_amount": avg_refund,
             }

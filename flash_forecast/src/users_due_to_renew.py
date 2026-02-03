@@ -12,7 +12,7 @@ SELECT
   subscription_trial_end_date,
   next_billing_date,
   month_index,
-  region,
+  geo,
   term_name,
   trial_cadence,
   term_cadence,

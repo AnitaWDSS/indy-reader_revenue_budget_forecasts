@@ -28,7 +28,7 @@ clean_transactions_df AS (
     tax_rate,
     tax_country,
     term_cadence,
-    region,
+    geo,
     package_type,
     customer_type,
     term_price,
@@ -50,7 +50,7 @@ monthly_amount_paid AS (
     trial_price_value,
     term_price_value,
     term_cadence,
-    region,
+    geo,
     package_type,
     customer_type,
     ROUND(SUM(local_price),2) AS monthly_amount_paid
@@ -88,7 +88,7 @@ subs_and_trans AS (
     user_access_expiration_date,
     transaction_month,
     term_cadence,
-    region,
+    geo,
     package_type,
     customer_type,
     transaction_date,
@@ -116,7 +116,7 @@ subs_and_trans AS (
 
   SELECT
     COUNT(subscription_id) AS number_of_offers,
-    region,
+    geo,
     term_cadence,
     package_type,
     customer_type,

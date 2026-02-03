@@ -71,4 +71,6 @@ WHERE
 
 query_job = client.query(query)
 retention_curves_df = query_job.to_dataframe()
-retention_curves_df["trial_duration_months"].fillna(0, inplace=True)
+retention_curves_df["trial_duration_months"] = retention_curves_df[
+    "trial_duration_months"
+].fillna(0)

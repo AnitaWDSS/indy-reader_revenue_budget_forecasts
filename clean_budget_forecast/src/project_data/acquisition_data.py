@@ -75,9 +75,9 @@ HPPU_forecast_df = HPPU_forecast_df[
 PAV_forecast_df["Subscription_Experience"] = "Premium Article Gate"
 HPPU_forecast_df["Subscription_Experience"] = "HPPU / Section PU"
 
-# NOTE: This adds all traffic UK+ROW into UK region - change if possible
-PAV_forecast_df["region"] = "UK"
-HPPU_forecast_df["region"] = "UK"
+# NOTE: This adds all traffic UK+ROW into UK geo - change if possible
+PAV_forecast_df["geo"] = "UK"
+HPPU_forecast_df["geo"] = "UK"
 
 # Merging CVR into traffic Forecasts
 PAV_forecast_df = pd.merge(
@@ -230,7 +230,7 @@ current_users_breakdown = cohort_df[
 current_users_breakdown = (
     current_users_breakdown.groupby(
         [
-            "region",
+            "geo",
             "package_type",
             "trial_duration",
             "term_cadence",
@@ -254,7 +254,7 @@ current_users_breakdown["perc_subs"] = (
 combined = forecasted_subs.merge(
     current_users_breakdown[
         [
-            "region",
+            "geo",
             "package_type",
             "term_cadence",
             "trial_duration",
@@ -272,7 +272,7 @@ combined["forecasted_subs"] = combined["New Subscribers"] * combined["perc_subs"
 # Manually fixing erroneous term
 
 broken_term = (
-    (combined["region"] == "EUR")
+    (combined["geo"] == "EUR")
     & (combined["term_cadence"] == "month")
     & (combined["term_price"] == "GBP99.00")
 )

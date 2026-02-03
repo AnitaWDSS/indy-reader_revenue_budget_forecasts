@@ -40,7 +40,7 @@ acq_forecast_cohort_df = cohort_df[cohort_df["calendar_month"] < start_month].co
 
 #  Adding unique keys for retention curve splits and cohort splits
 retention_curve_splits = [split for split in splits if split != "trial_duration_months"]
-added_splits = ["region", "term_price", "trial_price", "trial_duration"]
+added_splits = ["geo", "term_price", "trial_price", "trial_duration"]
 
 
 acq_forecast_cohort_df["retention_curve_splits"] = acq_forecast_cohort_df[
@@ -58,7 +58,7 @@ future_cohorts[
     [
         "package_type",
         "term_cadence",
-        "region",
+        "geo",
         "term_price",
         "trial_price",
         "trial_duration",
@@ -95,7 +95,7 @@ future_cohorts.loc[active_subs_terms, "trial_status"] = "trialist"
 final_forecasted_subs = combined[
     [
         "date",
-        "region",
+        "geo",
         "package_type",
         "term_cadence",
         "trial_duration",
@@ -156,7 +156,7 @@ extend_aquisition_splits = [
     "signup_cohort",
     "package_type",
     "term_cadence",
-    "region",
+    "geo",
     "term_price",
     "trial_price",
     "trial_duration",
@@ -226,7 +226,7 @@ base_acq_df = base_acq_df.drop("level_8", axis="columns")
 
 currency_code_map = {"UK": "GBP", "EUR": "EUR", "US": "USD"}
 
-base_acq_df["payment_currency"] = base_acq_df["region"].map(currency_code_map)
+base_acq_df["payment_currency"] = base_acq_df["geo"].map(currency_code_map)
 
 """# Applying Retention Curves"""
 
@@ -262,7 +262,7 @@ base_acq_retcurves_forecast_df["is_trialist"] = np.where(
 )
 
 offer_splits = [
-    "region",
+    "geo",
     "term_cadence",
     "package_type",
     "customer_type",
@@ -301,7 +301,7 @@ offers_forecast_df["transaction_month"] = pd.to_datetime(
 
 grouping_columns = [
     "term_cadence",
-    "region",
+    "geo",
     "package_type",
     "customer_type",
     "monthly_amount_paid",
@@ -322,9 +322,7 @@ amortised_offers_df["amortised_revenue"] = (
 """##Converting Offers Currencies"""
 
 currency_code_map = {"UK": "GBP", "EUR": "EUR", "US": "USD"}
-amortised_offers_df["Currency_Code"] = amortised_offers_df["region"].map(
-    currency_code_map
-)
+amortised_offers_df["Currency_Code"] = amortised_offers_df["geo"].map(currency_code_map)
 
 # Convert 'transaction_month' and 'Date' columns to datetime objects before merging
 amortised_offers_df["transaction_month"] = pd.to_datetime(
@@ -378,7 +376,7 @@ forecasted_refunds_full.head(1)
 
 forecasted_refunds_full.head(1)
 
-forecasted_refunds_full["Currency_Code"] = forecasted_refunds_full["region"].map(
+forecasted_refunds_full["Currency_Code"] = forecasted_refunds_full["geo"].map(
     currency_code_map
 )
 
@@ -457,7 +455,7 @@ cohort_joined_converted_df["converted_predicted_amortised_revenue"] = (
 final_revenue_df = cohort_joined_converted_df
 
 final_cohort_splits = [
-    "region",
+    "geo",
     "package_type",
     "term_cadence_months",
     "term_price_value",
@@ -485,7 +483,7 @@ dimensions = [
     # 'term_price',
     "term_price_value",
     "payment_currency",
-    "region",
+    "geo",
     "signup_cohort",
     # 'trial_duration',
     "calendar_month",
@@ -524,7 +522,7 @@ kpi_dimensions = [
     # 'term_price',
     "term_price_value",
     "payment_currency",
-    "region",
+    "geo",
     "signup_cohort",
     # 'trial_duration',
     # 'calendar_month',
@@ -541,7 +539,7 @@ kpi_dimensions = [
 ]
 
 final_cohort_splits = [
-    "region",
+    "geo",
     "package_type",
     "term_cadence_months",
     "term_price_value",

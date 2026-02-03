@@ -26,7 +26,7 @@ query = f"""
     tax_rate,
     tax_country,
     term_cadence,
-    region,
+    geo,
     package_type,
     customer_type,
     term_price,
@@ -44,7 +44,7 @@ query = f"""
         subscription_id,
         yearmonth,
         term_cadence,
-        region,
+        geo,
         package_type,
         customer_type,
         local_price
@@ -56,7 +56,7 @@ query = f"""
 
   SELECT
   ROUND(SUM(local_price),2) AS refund_amount,
-  region,
+  geo,
   yearmonth
   FROM refunds_this_year
   GROUP BY ALL

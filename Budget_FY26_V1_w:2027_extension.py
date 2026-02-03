@@ -299,7 +299,7 @@ for i in range(15):
 
 """# User Bases"""
 
-base_splits = splits + ["trial_price_value","trial_price","term_price", "term_price_value", "payment_currency", "region","signup_cohort", "trial_duration"]
+base_splits = splits + ["trial_price_value","trial_price","term_price", "term_price_value", "payment_currency", "geo","signup_cohort", "trial_duration"]
 base_splits_str = ", ".join(base_splits)
 
 start_date = '2015-01-01'
@@ -447,9 +447,9 @@ HPPU_forecast_df = HPPU_forecast_df[pd.to_datetime(HPPU_forecast_df['date']).dt.
 PAV_forecast_df['Subscription Experience']='Premium Article Gate'
 HPPU_forecast_df['Subscription Experience']='HPPU / Section PU'
 
-# NOTE: This adds all traffic UK+ROW into UK region - change if possible
-PAV_forecast_df['region']='UK'
-HPPU_forecast_df['region']='UK'
+# NOTE: This adds all traffic UK+ROW into UK geo - change if possible
+PAV_forecast_df['geo']='UK'
+HPPU_forecast_df['geo']='UK'
 
 # Merging CVR into traffic Forecasts
 PAV_forecast_df = pd.merge(PAV_forecast_df, cvr_by_source_df[['Subscription Experience', 'CVR']], on='Subscription Experience', how='left')
@@ -541,19 +541,19 @@ current_users_breakdown = cohort_df[((
 
 ]
 
-current_users_breakdown = current_users_breakdown.groupby(['region', 'package_type','trial_duration', 'term_cadence','trial_price','term_price','month_index'])['total_cohort_users'].sum().reset_index()
+current_users_breakdown = current_users_breakdown.groupby(['geo', 'package_type','trial_duration', 'term_cadence','trial_price','term_price','month_index'])['total_cohort_users'].sum().reset_index()
 current_users_breakdown['all_in_cohort'] = current_users_breakdown['total_cohort_users'].sum()
 
 current_users_breakdown['perc_subs'] = current_users_breakdown['total_cohort_users'] / current_users_breakdown['all_in_cohort']
 
-combined = forecasted_subs.merge(current_users_breakdown[['region', 'package_type', 'term_cadence', 'trial_duration', 'trial_price', 'term_price', 'month_index','perc_subs']], how='cross')
+combined = forecasted_subs.merge(current_users_breakdown[['geo', 'package_type', 'term_cadence', 'trial_duration', 'trial_price', 'term_price', 'month_index','perc_subs']], how='cross')
 
 combined['forecasted_subs'] = combined['New Subscribers'] * combined['perc_subs']
 
 # Manually fixing erroneous term
 
 broken_term = (
-    (combined["region"] == "EUR")
+    (combined["geo"] == "EUR")
     & (combined["term_cadence"] == "month")
     & (combined["term_price"] == "GBP99.00")
 )
@@ -566,7 +566,7 @@ acq_forecast_cohort_df =cohort_df[cohort_df['calendar_month'] < date(2025,10,1)]
 #  Adding unique keys for retention curve splits and cohort splits
 retention_curve_splits = [split for split in splits if split != "trial_duration_months"]
 added_splits = [
-        'region', 'term_price', 'trial_price', 'trial_duration'
+        'geo', 'term_price', 'trial_price', 'trial_duration'
     ]
 
 
@@ -638,7 +638,7 @@ def generate_new_cohorts(cohorts_df, forecast_months=27):
 
 future_cohorts = generate_new_cohorts(acq_forecast_cohort_df.copy()).sort_values(['cohort_splits','signup_cohort','calendar_month'])
 
-future_cohorts[['package_type', 'term_cadence','region', 'term_price', 'trial_price', 'trial_duration']] = future_cohorts['cohort_splits'].str.split(',', expand=True)
+future_cohorts[['package_type', 'term_cadence','geo', 'term_price', 'trial_price', 'trial_duration']] = future_cohorts['cohort_splits'].str.split(',', expand=True)
 future_cohorts['retention_curve_splits'] = future_cohorts[retention_curve_splits].apply(lambda row: ','.join(row.values.astype(str)), axis=1)
 
 future_cohorts['signup_cohort'] = future_cohorts['signup_cohort'].astype(str) + '-01'
@@ -667,7 +667,7 @@ future_cohorts[future_cohorts['trial_status'] == 'trialist']['cohort_splits'].un
 
 future_cohorts[future_cohorts['trial_status'] == 'trialist'].head(1)
 
-final_forecasted_subs = combined[['date', 'region', 'package_type', 'term_cadence', 'trial_duration', 'trial_price', 'term_price', 'month_index', 'forecasted_subs']]
+final_forecasted_subs = combined[['date', 'geo', 'package_type', 'term_cadence', 'trial_duration', 'trial_price', 'term_price', 'month_index', 'forecasted_subs']]
 final_forecasted_subs['cohort_splits'] = final_forecasted_subs[retention_curve_splits + added_splits].apply(lambda row: ','.join(row.values.astype(str)), axis=1)
 
 # Ensure key columns are same type
@@ -708,7 +708,7 @@ future_final_cohorts
 
 forecast_date = date(2027,12,1)
 
-extend_aquisition_splits = ["signup_cohort", "package_type", "term_cadence", "region", "term_price", "trial_price", "trial_duration", "total_cohort_users"]
+extend_aquisition_splits = ["signup_cohort", "package_type", "term_cadence", "geo", "term_price", "trial_price", "trial_duration", "total_cohort_users"]
 
 def extend_aquisition_data(group):
 
@@ -761,7 +761,7 @@ currency_code_map = {
     "US": "USD"
 }
 
-base_acq_df["payment_currency"] = base_acq_df["region"].map(currency_code_map)
+base_acq_df["payment_currency"] = base_acq_df["geo"].map(currency_code_map)
 
 """# Applying Retention Curves"""
 
@@ -825,7 +825,7 @@ base_acq_retcurves_forecast_df[
     (base_acq_retcurves_forecast_df['package_type'] == 'DIGITAL Subscriber') &
     (base_acq_retcurves_forecast_df['trial_duration_months'] == 6) &
     (base_acq_retcurves_forecast_df['term_cadence'] == "year") &
-    (base_acq_retcurves_forecast_df['region'] == 'UK') &
+    (base_acq_retcurves_forecast_df['geo'] == 'UK') &
     (base_acq_retcurves_forecast_df['signup_cohort'] == date(2025,3,1))
 ]
 
@@ -889,7 +889,7 @@ clean_transactions_df AS (
     tax_rate,
     tax_country,
     term_cadence,
-    region,
+    geo,
     package_type,
     customer_type,
     term_price,
@@ -911,7 +911,7 @@ monthly_amount_paid AS (
     trial_price_value,
     term_price_value,
     term_cadence,
-    region,
+    geo,
     package_type,
     customer_type,
     ROUND(SUM(local_price),2) AS monthly_amount_paid
@@ -949,7 +949,7 @@ subs_and_trans AS (
     user_access_expiration_date,
     transaction_month,
     term_cadence,
-    region,
+    geo,
     package_type,
     customer_type,
     transaction_date,
@@ -977,7 +977,7 @@ subs_and_trans AS (
 
   SELECT
     COUNT(subscription_id) AS number_of_offers,
-    region,
+    geo,
     term_cadence,
     package_type,
     customer_type,
@@ -1001,7 +1001,7 @@ offers_df = query_job.to_dataframe()
 
 offers_df
 
-offer_splits = ["region", "term_cadence", "package_type", "customer_type", "monthly_amount_paid"]
+offer_splits = ["geo", "term_cadence", "package_type", "customer_type", "monthly_amount_paid"]
 
 import pandas as pd
 import numpy as np
@@ -1075,7 +1075,7 @@ offers_forecast_df["transaction_month"] = pd.to_datetime(offers_forecast_df["tra
 
 grouping_columns = [
     "term_cadence",
-    "region",
+    "geo",
     "package_type",
     "customer_type",
     "monthly_amount_paid",
@@ -1130,7 +1130,7 @@ currency_code_map = {
     "EUR": "EUR",
     "US": "USD"
 }
-amortised_offers_df['Currency_Code'] = amortised_offers_df['region'].map(currency_code_map)
+amortised_offers_df['Currency_Code'] = amortised_offers_df['geo'].map(currency_code_map)
 
 # Convert 'transaction_month' and 'Date' columns to datetime objects before merging
 amortised_offers_df['transaction_month'] = pd.to_datetime(amortised_offers_df['transaction_month'])
@@ -1175,7 +1175,7 @@ query = f"""
     tax_rate,
     tax_country,
     term_cadence,
-    region,
+    geo,
     package_type,
     customer_type,
     term_price,
@@ -1194,7 +1194,7 @@ query = f"""
         subscription_id,
         yearmonth,
         term_cadence,
-        region,
+        geo,
         package_type,
         customer_type,
         local_price
@@ -1207,7 +1207,7 @@ query = f"""
 
   SELECT
   ROUND(SUM(local_price),2) AS refund_amount,
-  region,
+  geo,
   yearmonth
   FROM refunds_2025
   GROUP BY ALL
@@ -1229,8 +1229,8 @@ def generate_refund_forecast(refunds_df, forecast_months=27):
         last_month = refunds_df['yearmonth'].max()
         new_month = last_month + 1  # forecast next month
 
-        # Forecast separately for each region
-        for region, group in refunds_df.groupby('region'):
+        # Forecast separately for each geo
+        for geo, group in refunds_df.groupby('geo'):
             group = group.sort_values('yearmonth')
 
             # Take last 6 actual/forecasted months
@@ -1244,7 +1244,7 @@ def generate_refund_forecast(refunds_df, forecast_months=27):
 
             # Create new forecast row
             new_row = {
-                'region': region,
+                'geo': geo,
                 'yearmonth': new_month,
                 'refund_amount': avg_refund
             }
@@ -1270,7 +1270,7 @@ forecasted_refunds_full.head(1)
 
 forecasted_refunds_full.head(1)
 
-forecasted_refunds_full['Currency_Code'] = forecasted_refunds_full['region'].map(currency_code_map)
+forecasted_refunds_full['Currency_Code'] = forecasted_refunds_full['geo'].map(currency_code_map)
 
 # Convert 'transaction_month' and 'Date' columns to datetime objects before merging
 forecasted_refunds_full['yearmonth'] = pd.to_datetime(forecasted_refunds_full['yearmonth'])
@@ -1330,7 +1330,7 @@ dimensions = [
     # 'term_price',
     'term_price_value',
     'payment_currency',
-    'region',
+    'geo',
     'signup_cohort',
     # 'trial_duration',
     'calendar_month',
@@ -1363,7 +1363,7 @@ cohort_joined_converted_df[
     (cohort_joined_converted_df['trial_duration_months'] == 6) &
     (cohort_joined_converted_df['trial_price_value'] == "1") &
     (cohort_joined_converted_df['term_cadence_months'] == 12) &
-    (cohort_joined_converted_df['region'] == 'EUR') &
+    (cohort_joined_converted_df['geo'] == 'EUR') &
     (cohort_joined_converted_df['signup_cohort'] == date(2025,6,1))
 ]
 
@@ -1372,7 +1372,7 @@ final_df[
     (final_df['trial_duration_months'] == 6) &
     (final_df['trial_price_value'] == 1.00) &
     (final_df['term_cadence_months'] == 12) &
-    (final_df['region'] == 'UK') &
+    (final_df['geo'] == 'UK') &
     (final_df['signup_cohort'] == date(2025,9,1))
 ]
 
@@ -1422,7 +1422,7 @@ GBP_amortised_offers_df.isnull().sum()
 
 """## Standard Upload"""
 
-import_df = cohort_joined_converted_df[["package_type", "term_cadence", "trial_price",	"term_price", "region",	"signup_cohort",	"trial_duration", "calendar_month",	"month_index", "predicted_active_users","predicted_amortised_revenue",	"converted_predicted_amortised_revenue"]]
+import_df = cohort_joined_converted_df[["package_type", "term_cadence", "trial_price",	"term_price", "geo",	"signup_cohort",	"trial_duration", "calendar_month",	"month_index", "predicted_active_users","predicted_amortised_revenue",	"converted_predicted_amortised_revenue"]]
 
 import_df = import_df[import_df.calendar_month >= date(2025,10,1)]
 
@@ -1442,7 +1442,7 @@ forecast_worksheet.worksheet('standard_forecast_fixed').update([import_df.column
 
 """
 
-base_df = cohort_joined_converted_df[["package_type", "term_cadence", "trial_price",	"term_price", "region",	"signup_cohort",	"trial_duration", "calendar_month",	"month_index", "predicted_active_users","predicted_amortised_revenue",	"converted_predicted_amortised_revenue", "is_trialist"]]
+base_df = cohort_joined_converted_df[["package_type", "term_cadence", "trial_price",	"term_price", "geo",	"signup_cohort",	"trial_duration", "calendar_month",	"month_index", "predicted_active_users","predicted_amortised_revenue",	"converted_predicted_amortised_revenue", "is_trialist"]]
 base_df = base_df[base_df['calendar_month'] >= date(2025,10,1)]
 base_df['acquisition'] = base_df.loc[base_df['month_index'] == 0, 'predicted_active_users']
 
