@@ -9,7 +9,8 @@
             "console": "integratedTerminal",
             "env": {
                 "DEBUG_MODE": "true"
-            }
+            },
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
