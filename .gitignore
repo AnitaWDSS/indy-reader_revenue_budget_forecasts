@@ -1,3 +1,7 @@
+# ==============================================================================
+# Python .gitignore for indy-reader_revenue_budget_forecasts
+# ==============================================================================
+
 debug/
 *.parquet
 __pycache__/          # Python 3 cache directories - MUST HAVE
