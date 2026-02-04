@@ -1,3 +1,16 @@
 debug/
 *.parquet
-__pycache__/
+__pycache__/          # Python 3 cache directories - MUST HAVE
+*.py[cod]             # Compiled Python files (.pyc, .pyo, .pyd)
+*$py.class 
+.venv/                # Your virtual environment folder
+venv/                 # Alternative venv name
+env/
+.vscode/              # VSCode settings (can be project-specific)
+.idea/  
+.DS_Store             # Mac file system metadata
+Thumbs.db             # Windows thumbnail cache 
+.ipynb_checkpoints/   # Jupyter auto-save files
+dist/                 # Built distributions
+build/                # Build artifacts
+*.egg-info/           # Package metadata
