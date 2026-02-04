@@ -1,5 +1,5 @@
 import pandas as pd
-from src.project_data.user_base_data import forecast_to_date
+from clean_budget_forecast.src.project_data.user_base_data import forecast_to_date
 
 
 def extend_aquisition_data(group):

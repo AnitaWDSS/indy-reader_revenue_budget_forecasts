@@ -1,5 +1,5 @@
 # Introducing new cohorts that will be acquired in 2026
-from src.project_data.subscriptions_data import splits
+from clean_budget_forecast.src.project_data.subscriptions_data import splits
 import pandas as pd
 import numpy as np
 

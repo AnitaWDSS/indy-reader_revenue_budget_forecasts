@@ -20,6 +20,7 @@ from clean_budget_forecast.src.project_data.subscriptions_data import (
     retention_curves_df,
     splits,
 )
+from clean_budget_forecast.main import final_forecasted_subs
 
 """## Summed Local Price
 
@@ -218,11 +219,13 @@ retention_curves = retention_curves_df.groupby(splits, group_keys=False).apply(a
 subs_to_renew_df = (
     renewal_due_df.groupby(
         [
+            "geo",
+            "next_billing_date",
             "month_index",
             "customer_type",
             "package_type",
             "trial_price",
-            "trial_cadence",
+            "trial_duration",
             "term_price",
             "term_cadence",
         ]
@@ -244,4 +247,4 @@ subs_to_renew_df["renewed_subs"] = (
 subs_to_renew_df["renewed_subs"] = subs_to_renew_df["renewed_subs"].fillna(
     subs_to_renew_df["user_count"]
 )
-print(subs_to_renew_df.loc[subs_to_renew_df.month_index > 0])
+acquisitions_df = final_forecasted_subs.copy()
