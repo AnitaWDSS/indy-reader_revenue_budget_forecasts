@@ -9,7 +9,7 @@ def spread_acquisition_daily(df):
     * Expanding the dataframe to have one row per day of acquisition, with the daily acquisition count
     """
     # Calculate the number of days in the month for each row
-    df["days_in_month"] = df["year_month"].dt.days_in_month
+    df["days_in_month"] = df["calendar_month"].dt.days_in_month
 
     # Calculate daily acquisition count
     df["daily_acquisition"] = df["active_users"] / df["days_in_month"]
@@ -19,7 +19,7 @@ def spread_acquisition_daily(df):
 
     for _, row in df.iterrows():
         date_range = pd.date_range(
-            start=row["year_month"],
+            start=row["calendar_month"],
             periods=row["days_in_month"],
             freq="D",
         )
@@ -32,7 +32,7 @@ def spread_acquisition_daily(df):
         )
         # Add al other columns from the original row
         for col in df.columns:
-            if col not in ["year_month", "days_in_month", "active_users"]:
+            if col not in ["calendar_month", "days_in_month", "active_users"]:
                 daily_df[col] = row[col]
         expanded_rows.append(daily_df)
     # Concatenate all daily dfs into a single df

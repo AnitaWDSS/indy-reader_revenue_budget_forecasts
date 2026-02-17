@@ -15,9 +15,12 @@ SELECT
   geo,
   term_name,
   trial_cadence,
+  trial_duration,
   term_cadence,
   term_price,
+  term_price_value,
   trial_price,
+  trial_price_value,
   is_trialist,
   customer_type,
   package_type

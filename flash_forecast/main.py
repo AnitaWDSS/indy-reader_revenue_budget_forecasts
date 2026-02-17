@@ -20,7 +20,8 @@ from clean_budget_forecast.src.project_data.subscriptions_data import (
     retention_curves_df,
     splits,
 )
-from clean_budget_forecast.main import final_forecasted_subs
+from clean_budget_forecast.main import extended_aquisition_data_extended
+from flash_forecast.src.spreading_acquisition_uniformly import spread_acquisition_daily
 
 """## Summed Local Price
 
@@ -247,4 +248,34 @@ subs_to_renew_df["renewed_subs"] = (
 subs_to_renew_df["renewed_subs"] = subs_to_renew_df["renewed_subs"].fillna(
     subs_to_renew_df["user_count"]
 )
-acquisitions_df = final_forecasted_subs.copy()
+acquisitions_df = extended_aquisition_data_extended.copy()
+
+# Categorise users by customer type based on package type
+conditions = [
+    acquisitions_df["package_type"].str.contains(
+        "Subscriber|Subscription", case=False, na=False
+    ),
+    acquisitions_df["package_type"].str.contains("Donation", case=False, na=False),
+    acquisitions_df["package_type"].str.contains("Other", case=False, na=False),
+]
+choices = ["Subscription", "Donation", "Test"]
+acquisitions_df["customer_type"] = np.select(conditions, choices, default="Other")
+
+# Spread acquisitions uniformly across the month
+
+daily_acquisitions_df = spread_acquisition_daily(acquisitions_df)
+
+daily_acquisitions_renamed_df = daily_acquisitions_df.rename(
+    columns={"daily_acquisition": "due_users", "calendar_month": "due_date"}
+)
+subs_to_renew_renamed_df = subs_to_renew_df.rename(
+    columns={"next_billing_date": "due_date", "renewed_subs": "due_users"}
+)
+upcoming_transactions = pd.concat(
+    [subs_to_renew_renamed_df, daily_acquisitions_renamed_df], ignore_index=True
+)
+
+
+# 1. Need to concat the acquisitions and renewals to get the full user base for the month, which we can then apply the retention curves to in order to get the forecasted revenue for the month. This is done in the upcoming_transactions df.
+# 2. Once we have the full user base, we can join to revenue metrics per user to get the forecasted revenue for the month.
+# 3. Left join with GBP conversion to get all in correct currency.
